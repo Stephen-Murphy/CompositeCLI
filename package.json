@@ -1,0 +1,46 @@
+{
+    "name": "composite-cli",
+    "version": "0.0.1",
+    "description": "CompositeCLI",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "npm run build-ts && npm run tslint",
+        "build-ts": "./node_modules/.bin/tsc",
+        "watch-ts": "./node_modules/.bin/tsc -w",
+        "test": "./node_modules/.bin/jest --coverage --verbose",
+        "watch-test": "npm run test -- --watchAll",
+        "tslint": "./node_modules/.bin/tslint --force -c \"tslint.json\" -p \"tsconfig.json\"",
+        "tslint-prod": "./node_modules/.bin/tslint -c \"tslint.json\" -p \"tsconfig.json\"",
+        "clean:all": "npm run clean:coverage && npm run clean:dist",
+        "clean:test": "npm run clean:coverage",
+        "clean:coverage": "./node_modules/.bin/rimraf -- coverage ./test-report.xml",
+        "clean:dist": "./node_modules/.bin/rimraf -- core ./index.* ./*.tgz"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Stephen-Murphy/CompositeCLI.git",
+        "private": false
+    },
+    "author": "Stephen-Murphy",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Stephen-Murphy/CompositeCLI/issues"
+    },
+    "homepage": "https://github.com/Stephen-Murphy/CompositeCLI#readme",
+    "dependencies": {
+        "chalk": "^2.4.1"
+    },
+    "devDependencies": {
+        "@types/jest": "^23.3.8",
+        "@types/node": "^10.12.1",
+        "jest": "^23.6.0",
+        "jest-junit-reporter": "^1.1.0",
+        "ts-jest": "^23.10.4",
+        "tslint": "^5.11.0",
+        "typescript": "^3.1.4"
+    },
+    "files": [
+        "index.*",
+        "core/**/*"
+    ]
+}
