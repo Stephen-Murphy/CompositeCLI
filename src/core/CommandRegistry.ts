@@ -1,6 +1,11 @@
 import { RegisteredCommandHandler, Default, RegisteredCommandOption, RegisteredCommand, ICommandRegistry } from "./types";
 
 
+// TODO: reconcile each CommandHandler() immediately
+// - on @Command() - set a timeout internally or add to a Set<Map<target, command>>
+//  - when @CommandHandler() defined for target - reconcile that commandhandler and it's commands
+// - if any commands are defined without a handler - error
+
 // TODO: make all imported commands fully readonly as they are passed in IArguments
 
 class CommandRegistry implements ICommandRegistry {

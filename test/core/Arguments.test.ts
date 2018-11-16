@@ -1,6 +1,7 @@
 import { Arguments } from '../../src/core/Arguments';
 import { RegisteredCommand, ICommandArguments } from '../../src/core/types';
 
+
 describe('Arguments class', () => {
 
     it('should assign input on construction', () => {
@@ -16,7 +17,7 @@ describe('Arguments class', () => {
             target: {}
         };
         const argv: ReadonlyArray<string> = [];
-        const flags = new Map<string, boolean>();
+        const flags = new Set<string>();
         const options = new Map<string | number, string | number | boolean | null>();
         const positionals: Array<string | number | boolean | null> = [];
 
