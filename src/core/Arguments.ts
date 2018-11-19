@@ -21,15 +21,15 @@ export class Arguments implements ICommandArguments {
     public readonly command: RegisteredCommand;
     public readonly argv: ReadonlyArray<string>;
     public readonly flags: Set<string>;
-    public readonly options: Map<string | number, string | number | boolean | null>;
-    public readonly positionals: Array<string | number | boolean | null>;
+    public readonly options: Map<string | number, any>;
+    public readonly positionals: Array<any>;
 
     constructor(
         command: RegisteredCommand,
         argv: ReadonlyArray<string>,
         flags: Set<string>,
-        options: Map<string | number, string | number | boolean | null>,
-        positionals: Array<string | number | boolean | null>) {
+        options: Map<string | number, any>,
+        positionals: Array<any>) {
         this.command = command; // copy of or readonly? will reference the internal command allowing changes to reflect subsequent command parsing
         this.argv = Object.freeze(Array.from(argv));
         this.flags = flags;

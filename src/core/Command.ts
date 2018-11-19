@@ -1,7 +1,10 @@
-import '@wholesoftware/js-utils/extensions/array/prototype/excludes';
 import { Default, DecoratorResult, TCommandOption, CommandNameRegex, Type, TCommandDecorator, RegisteredCommandOption } from "./types";
 import CommandRegistry from "./CommandRegistry";
 
+import kindOf from 'kind-of';
+
+const a: Array<[string, string]> = [];
+kindOf(a[Symbol.iterator]());
 
 // @CommandHandler()
 // - required on any class that handles a command
@@ -137,7 +140,7 @@ function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandO
 
         } else if (Array.isArray(aliasOrOptions)) {
 
-            if (aliasOrOptions !== undefined || commandOptions !== undefined) throw `@Command() - invalid arguments for command method '${propertyKey}' (2)`;
+            if (commandOptions !== undefined) throw `@Command() - invalid arguments for command method '${propertyKey}' (2)`;
             alias = null;
             options = aliasOrOptions;
 
@@ -173,7 +176,7 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
     let alias: string | null;
     let flag: string | null;
     let positional: boolean;
-    let type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+    let type: number;
 
     // valid configs:
     // 'string'
@@ -198,8 +201,9 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
             // can only have type string | number
             if (!option.type)
                 throw 'Positional option must specify a type';
-            if (![Type.Number, Type.String, Type.Number | Type.String].includes(option.type))
-                throw 'Positional option must specify string or number type';
+            // removed - positional can be anything
+            // if (![Type.Number, Type.Integer, Type.String, Type.Number | Type.String, Type.Integer | Type.String, Type.Integer | Type.Number, Type.Integer | Type.String | Type.Number].includes(option.type))
+            //    throw 'Positional option must specify string or number type';
             if (option.flag)
                 throw 'Positional option cannot specify flag';
             if (option.name && !(CommandNameRegex.test(option.name)))
@@ -220,7 +224,7 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
             if (option.flag !== undefined && !(/^[a-zA-Z]{1}$/.test(option.flag)) || option.flag === option.name || option.alias === option.flag)
                 throw 'validateCommandOption: invalid option.flag';
             if (option.flag && !option.type) option.type = Type.Boolean;
-            if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String))))
+            if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String | Type.Integer | Type.Array | Type.Object | Type.Function | Type.Map | Type.Set | Type.Buffer))))
                 throw 'validateCommandOption: invalid option.type';
 
             name = option.name;
