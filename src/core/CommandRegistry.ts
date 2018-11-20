@@ -21,7 +21,7 @@ class CommandRegistry implements ICommandRegistry {
         this.pendingCommands.clear();
         if (clearCache) {
             for (let fileName of importedCommands) {
-                delete require.cache[fileName];
+                delete require.cache[fileName]; // fileName already absolute - require.resolve not needed
             }
         }
     }

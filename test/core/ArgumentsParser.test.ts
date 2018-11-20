@@ -1,36 +1,41 @@
 import ArgumentsParser from '../../src/core/ArgumentsParser';
 import CommandRegistry from '../../src/core/CommandRegistry';
-import { ICommandRegistry, ICommandArguments } from '../../src/core/types';
+import { ICommandArguments } from '../../src/core/types';
 
-const mockRegistry = (): ICommandRegistry => {
-    return new (<any>CommandRegistry).constructor;
-};
 
-describe('ArgumentsParser class', () => {
+describe('ArgumentsParser', () => {
 
-    it('should accept input on construction', () => {
+    it('should fail when a default command is not loaded', () => {
 
-        const registry: ICommandRegistry = mockRegistry();
-        const args: string[] = [];
+        CommandRegistry.reset(true);
+        delete require.cache[require.resolve('../../src/examples/index')];
 
-        let r: ArgumentsParser;
-        expect(() => r = new ArgumentsParser(registry, args)).not.toThrow();
-        r!;
+        const arg = new ArgumentsParser(CommandRegistry, []);
+        expect(() => arg.parse()).toThrow();
 
     });
 
-    it('should parse empty options correctly', () => {
+    it('should parse empty options', () => {
 
-        const registry: ICommandRegistry = mockRegistry();
+        CommandRegistry.reset(true);
+        delete require.cache[require.resolve('../../src/examples/index')];
+        const e = require('../../src/examples/index');
+
         const args: string[] = [];
 
         let r: ArgumentsParser;
-        expect(() => r = new ArgumentsParser(registry, args)).not.toThrow();
+        expect(() => r = new ArgumentsParser(CommandRegistry, args)).not.toThrow();
         r!;
 
         let a: ICommandArguments;
         expect(() => a = r!.parse()).not.toThrow();
-        a!;
+        expect(a!.command.descriptor.value).toBe(e.Example.prototype.defaultCommand);
+
+    });
+
+    it('should parse and resolve expected command', () => {
+
+        // 
 
     });
 

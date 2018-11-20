@@ -1,4 +1,3 @@
-*BuildStatusBadge* *ES6+* *Typescript types* *100% Coverage* *0 Dependencies* *decorators*
 
 # CompositeCLI
 CompositeCLI
@@ -70,3 +69,5 @@ class PostCommandHandler {
 
 ````
 
+### TODO's
+- build/test/coverage badges

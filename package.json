@@ -1,6 +1,6 @@
 {
     "name": "composite-cli",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "CompositeCLI",
     "main": "dist/index.js",
     "scripts": {
@@ -42,6 +42,11 @@
     },
     "files": [
         "index.*",
-        "core/**/*"
+        "core/**/*",
+        "examples/**/*",
+        "test/**/*",
+        "jest.config.js",
+        "tsconfig.json",
+        "tslint.json"
     ]
 }

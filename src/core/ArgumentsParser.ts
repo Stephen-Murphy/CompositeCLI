@@ -49,16 +49,14 @@ export default class ArgumentsParser {
 
         const arg = this.args[0];
 
-        let command: RegisteredCommand;
-
         if (!arg || typeof arg !== 'string') {
             // resolve the global default/fallback else error
-            command = this.registry.getCommand('')!;
+            let command = this.registry.getCommand('')!;
             if (!command) throw this.error('no command argument passed, and no global default @Command() specified');
             this.command = command;
             return command;
         } else if (CommandNameRegex.test(arg)) {
-            command = this.registry.getCommand(arg)!;
+            let command = this.registry.getCommand(arg)!;
             if (!command) throw this.error(`no command resolved for ${arg}`);
             this.args.shift();
             this.command = command;

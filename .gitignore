@@ -80,3 +80,4 @@ dist/
 test-report.xml
 /index.*
 /core
+/examples

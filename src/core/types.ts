@@ -29,6 +29,7 @@ export interface ICommandRegistry {
     registerHandler(name: string | typeof Default, alias: string | null, handlerClass: Function): void;
     registerCommand(command: string | typeof Default, alias: string | null, options: RegisteredCommandOption[], target: object, method: string, descriptor: PropertyDescriptor): void;
     getCommand(command: string): RegisteredCommand | null;
+    reset(hard: boolean): void;
 }
 
 // param-case - with numbers - first char can't be number
