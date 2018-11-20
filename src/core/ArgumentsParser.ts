@@ -1,6 +1,7 @@
 import { ICommandRegistry, RegisteredCommand, CommandNameRegex, RegisteredCommandOption, Type, ICommandArguments } from "./types";
 import { Arguments } from "./Arguments";
 import kindOf from "kind-of";
+import { Result, ResultHandler } from 'result-handler';
 
 
 export default class ArgumentsParser {
@@ -18,11 +19,13 @@ export default class ArgumentsParser {
     public static readonly FlagValueRegExp = /[^a-zA-Z]/; // non alphabetical characters, case insensitive
     public static readonly StringQuotesRegExp = /^\"{1}|\"{1}$/; // surrounding double quotes in a string
     public static readonly NoNextArg: unique symbol = Symbol('no next arg');
+    private readonly _handler: ResultHandler;
 
     constructor(registry: ICommandRegistry, args: Array<any>) {
         this.registry = registry;
         this.args = Array.from(args);
         this.argv = Array.from(args);
+        this._handler = Result.Handler(ArgumentsParser);
     }
 
     public parse(): ICommandArguments {
@@ -45,61 +48,66 @@ export default class ArgumentsParser {
 
     }
 
-    private parseCommand(): RegisteredCommand {
+    private parseCommand(): Result<RegisteredCommand> {
 
+        const result = this._handler<RegisteredCommand>(this.parseCommand);
         const arg = this.args[0];
 
         if (!arg || typeof arg !== 'string') {
             // resolve the global default/fallback else error
             let command = this.registry.getCommand('')!;
-            if (!command) throw this.error('no command argument passed, and no global default @Command() specified');
+            if (!command) return result.throw('no command argument passed, and no global default @Command() specified');
             this.command = command;
-            return command;
+            return result.success(command);
         } else if (CommandNameRegex.test(arg)) {
             let command = this.registry.getCommand(arg)!;
-            if (!command) throw this.error(`no command resolved for ${arg}`);
+            if (!command) return result.throw(`no command resolved for ${arg}`);
             this.args.shift();
             this.command = command;
-            return command;
+            return result.success(command);
         } else {
-            throw this.error('no command was passed, and no default handler specified');
+            return result.throw('no command was passed, and no default handler specified');
         }
 
     }
 
-    private parseFlags() {
+    private parseFlags(): Result {
 
         // all items starting with a single dash are flags and are handled as one
+
+        const result = this._handler(this.parseFlags);
 
         for (let flagGroup of this.args.filter(a => typeof a === 'string' && ArgumentsParser.FlagRegExp.test(a))) {
 
             flagGroup = flagGroup.replace(ArgumentsParser.FlagRegExp, '');
             if (ArgumentsParser.FlagValueRegExp.test(flagGroup))
-                throw this.error(`invalid characters in flags -${flagGroup}`);
+                return result.throw(`invalid characters in flags -${flagGroup}`);
             this.args.splice(this.args.indexOf(`-${flagGroup}`), 1);
 
             for (const flag of flagGroup.split('')) {
                 const option = this.command!.options.find(o => o.flag === flag);
-                if (!option) throw this.error(`unknown flag -${flag} in group -${flagGroup}`);
-                if (this.seen.has(option)) throw this.error(`option ${option.name || option.alias || option.flag} already declared`);
+                if (!option) return result.throw(`unknown flag -${flag} in group -${flagGroup}`);
+                if (this.seen.has(option)) return result.throw(`option ${option.name || option.alias || option.flag} already declared`);
                 this.seen.add(option);
-                if (this.flags.has(flag)) throw this.error(`flag ${flag} already set`);
+                if (this.flags.has(flag)) return result.throw(`flag ${flag} already set`);
                 this.flags.add(flag);
                 if (option.name) {
-                    if (this.options.has(option.name)) throw this.error(`option ${option.name} already set`);
+                    if (this.options.has(option.name)) return result.throw(`option ${option.name} already set`);
                     this.options.set(option.name, true);
                 }
                 if (option.alias) {
-                    if (this.options.has(option.alias)) throw this.error(`option ${option.alias} already set`);
+                    if (this.options.has(option.alias)) return result.throw(`option ${option.alias} already set`);
                     this.options.set(option.alias, true);
                 }
             }
 
         }
 
+        return result.success();
+
     }
 
-    private next() {
+    private next(): Result {
 
         const arg = this.args[0];
 
@@ -107,28 +115,30 @@ export default class ArgumentsParser {
             if (ArgumentsParser.OptionRegExp.test(arg))
                 return this.parseOption();
             if (ArgumentsParser.FlagRegExp.test(arg))
-                throw this.error(`[internal] unhandled flag ${arg} found in args`);
+                throw this._handler(this.next).throw(`[internal] unhandled flag ${arg} found in args`);
         }
 
-        this.parsePositional();
+        return this.parsePositional();
 
     }
 
-    private parseOption() {
+    private parseOption(): Result {
+
+        const result = this._handler(this.parseOption);
 
         const arg = this.validateOptionArg(this.args.shift());
         const next = (typeof this.args[0] === 'string' && this.args[0].startsWith('-')) ? ArgumentsParser.NoNextArg : this.args[0];
 
         const option = this.command!.options.find(o => o.name === arg || o.alias === arg);
-        if (!option) throw this.error(`unknown option '--${arg}'`);
-        if (this.seen.has(option)) throw this.error(`option '--${arg}' is already declared`);
+        if (!option) return result.throw(`unknown option '--${arg}'`);
+        if (this.seen.has(option)) return result.throw(`option '--${arg}' is already declared`);
         this.seen.add(option);
 
-        if (option.positional) throw this.error(`[internal] option --${arg} cannot be configured as positional`);
-        if (!option.name) throw this.error(`[internal] option --${arg} name is missing`);
-        if (this.options.has(option.name)) throw this.error(`option --${arg} already specified as --${option.name}`);
-        if (option.alias && this.options.has(option.alias)) throw this.error(`option --${arg} already specified as --${option.alias}`);
-        if (option.flag && this.options.has(option.flag)) throw this.error(`option --${arg} already specified as -${option.flag}`);
+        if (option.positional) return result.throw(`[internal] option --${arg} cannot be configured as positional`);
+        if (!option.name) return result.throw(`[internal] option --${arg} name is missing`);
+        if (this.options.has(option.name)) return result.throw(`option --${arg} already specified as --${option.name}`);
+        if (option.alias && this.options.has(option.alias)) return result.throw(`option --${arg} already specified as --${option.alias}`);
+        if (option.flag && this.options.has(option.flag)) return result.throw(`option --${arg} already specified as -${option.flag}`);
 
         // TODO: handle any option value type
         // if input is string - fallback to standard arg parse type
@@ -141,113 +151,113 @@ export default class ArgumentsParser {
             if (option.type & Type.Boolean) val = true;
             else val = null;
         } else {
-            val = this.parseValue(next, option.type);
+            val = this.parseValue(next, option.type).value;
             this.args.shift();
         }
 
         if (typeof val !== 'boolean' && option.flag)
-            throw this.error(`[internal] non-boolean option --${arg} cannot have a flag`);
+            return result.throw(`[internal] non-boolean option --${arg} cannot have a flag`);
 
         this.options.set(option.name, val);
         if (option.alias) this.options.set(option.alias, val);
         if (option.flag && val === true && option.type & Type.Boolean)
             this.flags.add(option.flag);
 
+        return result.success();
+
     }
 
-    private parsePositional() {
+    private parsePositional(): Result {
 
+        const result = this._handler(this.parsePositional);
         const arg = this.args.shift()!;
 
         const option = this.command!.options.find(o => o.positional && !this.seen.has(o));
-        if (!option) throw this.error(`no positional option available for arg ${arg}`);
+        if (!option) return result.throw(`no positional option available for arg ${arg}`);
         this.seen.add(option);
 
-        if (!option.name && !option.alias) throw this.error('[internal] positional must have name and/or alias');
-        if (option.flag) throw this.error('[internal] positional cannot specify a flag');
+        if (!option.name && !option.alias) return result.throw('[internal] positional must have name and/or alias');
+        if (option.flag) return result.throw('[internal] positional cannot specify a flag');
 
         // positional type could be String | Number
         if (option.type & ~(Type.Number | Type.String))
-            throw this.error(`[internal] invalid option type for positional argument`);
+            return result.throw(`[internal] invalid option type for positional argument`);
 
-        const val = this.parseValue(arg, option.type);
+        const val = this.parseValue(arg, option.type).value;
 
         this.options.set(this.positionals.length, val);
         this.positionals.push(val);
 
         if (option.name) {
-            if (this.options.has(option.name)) throw this.error(`positional option '${option.name}' already specified`);
+            if (this.options.has(option.name)) return result.throw(`positional option '${option.name}' already specified`);
             this.options.set(option.name, val);
         }
         if (option.alias) {
-            if (this.options.has(option.alias)) throw this.error(`positional option '${option.alias}' already specified`);
+            if (this.options.has(option.alias)) return result.throw(`positional option '${option.alias}' already specified`);
             this.options.set(option.alias, val);
         }
 
+        return result.success();
+
     }
 
-    private parseValue(value: any, type: number) {
+    private parseValue(value: any, type: number): Result<any> {
+
+        const result = this._handler(this.parseValue);
+
         // Parse priority: Integer > Number > Boolean > String > Map/Set/Buffer/Array/Object/Function
-        if (value === undefined || value === null) return value;
+        if (value === undefined || value === null) return result.success(value);
         if (type & Type.Integer && value !== "") {
-            if (Number.isInteger(Number(value))) return Number(value);
+            if (Number.isInteger(Number(value))) return result.success(Number(value));
         }
         if (type & Type.Number && value !== "") {
-            if (!Number.isNaN(Number(value))) return Number(value);
+            if (!Number.isNaN(Number(value))) return result.success(Number(value));
         }
         if (type & Type.Boolean && value !== "") {
-            if (typeof value === 'boolean') return value;
+            if (typeof value === 'boolean') return result.success(value);
             if (typeof value === 'string' || typeof value === 'number') {
                 switch (value.toString().toLowerCase()) {
-                    case 'true': case '1': case 'yes': case 'y': return true;
-                    case 'false': case '0': case 'no': case 'n': return false;
+                    case 'true': case '1': case 'yes': case 'y': return result.success(true);
+                    case 'false': case '0': case 'no': case 'n': return result.success(false);
                 }
             }
         }
         if (type & Type.String) {
             if (typeof value === 'string') {
                 if (value.startsWith('"') && value.endsWith('"')) {
-                    return value.substring(1, value.length - 1);
+                    return result.success(value.substring(1, value.length - 1));
                 } else {
-                    return value;
+                    return result.success(value);
                 }
             }
         }
         if (type & Type.Map) {
-            if (kindOf(value) === 'map') return value;
+            if (kindOf(value) === 'map') return result.success(value);
         }
         if (type & Type.Set) {
-            if (kindOf(value) === 'set') return value;
+            if (kindOf(value) === 'set') return result.success(value);
         }
         if (type & Type.Buffer) {
-            if (kindOf(value) === 'buffer') return value;
+            if (kindOf(value) === 'buffer') return result.success(value);
         }
         if (type & Type.Array) {
-            if (Array.isArray(value)) return value;
-            if (typeof value === 'string') return value.split(','); // TODO: proper split - this is very primitive and won't handle escaping or quote boundaries
+            if (Array.isArray(value)) return result.success(value);
+            if (typeof value === 'string') return result.success(value.split(',')); // TODO: proper split - this is very primitive and won't handle escaping or quote boundaries
         }
         if (type & Type.Object) {
-            if (typeof value === 'object') return value;
+            if (typeof value === 'object') return result.success(value);
         }
         if (type & Type.Function) {
-            if (typeof value === 'function') return value;
+            if (typeof value === 'function') return result.success(value);
         }
-        throw this.error(`parseValue error with value or type mismatch got '${kindOf(value)}' but expected typemask ${type}`, 2);
-    }
 
-    private get error() { // TODO: refactor out to 'composite-error-handling'
-        return (msg: string, stacks: number = 1) => {
-            debugger; // need to check - this is a getter so the invocation of the error might not be correct
-            const err = new Error();
-            const t = err.stack!.split('\n')[1 + stacks].split(' ')[5]; // ಠ_ಠ
-            err.message = `${t}() - ${msg}`;
-            return err;
-        };
+        return result.throw(`parseValue error with value or type mismatch got '${kindOf(value)}' but expected typemask ${type}`);
+
     }
 
     private validateOptionArg(arg?: string): string {
         if (!arg || !arg.startsWith('--') || !CommandNameRegex.test(arg.replace('--', '')))
-            throw this.error(`invalid option "${arg}"`, 2);
+            throw this._handler(this.validateOptionArg).failure(`invalid option "${arg}"`).message;
         return arg.replace('--', '');
     }
 
