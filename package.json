@@ -1,6 +1,6 @@
 {
     "name": "composite-cli",
-    "version": "0.0.5",
+    "version": "0.1.0",
     "description": "CompositeCLI",
     "main": "dist/index.js",
     "scripts": {
@@ -14,7 +14,7 @@
         "clean:all": "npm run clean:coverage && npm run clean:dist",
         "clean:test": "npm run clean:coverage",
         "clean:coverage": "./node_modules/.bin/rimraf -- coverage ./test-report.xml",
-        "clean:dist": "./node_modules/.bin/rimraf -- core ./index.* ./*.tgz"
+        "clean:dist": "./node_modules/.bin/rimraf -- core examples ./index.* ./*.tgz"
     },
     "repository": {
         "type": "git",

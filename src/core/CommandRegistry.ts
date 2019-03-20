@@ -20,7 +20,7 @@ class CommandRegistry implements ICommandRegistry {
         this.reconciledCommands.clear();
         this.pendingCommands.clear();
         if (clearCache) {
-            for (let fileName of importedCommands) {
+            for (const fileName of importedCommands) {
                 delete require.cache[fileName]; // fileName already absolute - require.resolve not needed
             }
         }
@@ -55,7 +55,7 @@ class CommandRegistry implements ICommandRegistry {
 
         this.pendingCommands.clear();
 
-        for (let method of handler.methods) {
+        for (const method of handler.methods) {
 
             let command: string;
             let alias: string | null;
@@ -114,7 +114,7 @@ class CommandRegistry implements ICommandRegistry {
         return this.reconciledCommands.get(command) || null;
     }
 
-    importCommands(commandsDir: string, app: ICommandLineApp) {
+    public importCommands(commandsDir: string, app: ICommandLineApp) {
 
         return new Promise(res => {
 

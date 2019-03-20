@@ -6,7 +6,7 @@ export type RegisteredCommandHandler = {
     readonly command: string | typeof Default;
     readonly alias: string | null; // null if command is Default
     readonly methods: Array<RegisteredCommand>;
-}
+};
 
 export type RegisteredCommand = {
     readonly target: object; // host class of method
@@ -15,7 +15,7 @@ export type RegisteredCommand = {
     readonly alias: string | null; // null if command is Default
     readonly options: RegisteredCommandOption[];
     readonly descriptor: PropertyDescriptor;
-}
+};
 
 export interface ICommandLineApp {
     logLine(message: string): void;
@@ -69,7 +69,7 @@ export type RegisteredCommandOption = {
     flag: string | null;
     positional: boolean;
     type: number;
-}
+};
 
 export type DecoratorResult = (target: object, propertyKey: string, descriptor: PropertyDescriptor) => void;
 

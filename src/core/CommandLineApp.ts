@@ -1,9 +1,9 @@
-import { ICommandLineApp } from './types';
-import { clearLine, cursorTo } from 'readline';
-import { resolve } from 'path';
-import ArgumentsParser from './ArgumentsParser';
-import { default as chalk } from 'chalk'
-import CommandRegistry from './CommandRegistry';
+import { ICommandLineApp } from "./types";
+import { clearLine, cursorTo } from "readline";
+import { resolve } from "path";
+import ArgumentsParser from "./ArgumentsParser";
+import { default as chalk } from "chalk";
+import CommandRegistry from "./CommandRegistry";
 
 
 export default class CommandLineApp implements ICommandLineApp {
@@ -11,14 +11,14 @@ export default class CommandLineApp implements ICommandLineApp {
     public readonly commandsDir: string | null = null;
 
     constructor(commandsDir?: string) {
-        if (typeof commandsDir === 'string') {
-            Object.defineProperty(this, 'commandsDir', { writable: false, value: resolve(commandsDir) });
-        } else if (commandsDir != null) {
+        if (typeof commandsDir === "string") {
+            Object.defineProperty(this, "commandsDir", { writable: false, value: resolve(commandsDir) });
+        } else if (commandsDir !== null && commandsDir !== undefined) {
             throw `CommandLineApp() - invalid commandsDir parameter <string | null>?`;
         }
     }
 
-    async init() {
+    public async init() {
         try {
             if (this.commandsDir) await CommandRegistry.importCommands(this.commandsDir, this);
             return await this.runCommand(process.argv.slice(2));
@@ -36,9 +36,9 @@ export default class CommandLineApp implements ICommandLineApp {
         process.stdout.write(message);
     }
 
-    async runCommand(): Promise<any>;
-    async runCommand(args: any[]): Promise<any>;
-    async runCommand(args?: any[]): Promise<any> {
+    public async runCommand(): Promise<any>;
+    public async runCommand(args: any[]): Promise<any>;
+    public async runCommand(args?: any[]): Promise<any> {
         if (!args) args = process.argv.slice(2);
         const command = (new ArgumentsParser(CommandRegistry, args)).parse();
         const handler = new (<any>command.command.target.constructor)();

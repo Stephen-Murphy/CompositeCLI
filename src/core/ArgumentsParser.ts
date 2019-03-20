@@ -55,18 +55,18 @@ export default class ArgumentsParser {
 
         if (!arg || typeof arg !== 'string') {
             // resolve the global default/fallback else error
-            let command = this.registry.getCommand('');
+            const command = this.registry.getCommand('');
             if (!command) return result.throw('no command argument passed, and no global default @Command() specified');
             this.command = command;
             return result.success(command);
         } else if (CommandNameRegex.test(arg)) {
-            let command = this.registry.getCommand(arg);
+            const command = this.registry.getCommand(arg);
             if (!command) return result.throw(`no command resolved for ${arg}`);
             this.args.shift();
             this.command = command;
             return result.success(command);
         } else { // initial option is a flag or option for the default command
-            let command = this.registry.getCommand('');
+            const command = this.registry.getCommand('');
             if (!command) return result.throw('no command was passed, and no default handler specified');
             return result.success(command);
         }
@@ -221,6 +221,7 @@ export default class ArgumentsParser {
                 switch (value.toString().toLowerCase()) { // should only be on type YesOrNo
                     case 'true': case '1': case 'yes': case 'y': return result.success(true);
                     case 'false': case '0': case 'no': case 'n': return result.success(false);
+                    default: break; // TODO: should this fall through or error?
                 }
             }
         }

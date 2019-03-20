@@ -32,7 +32,7 @@
         ],
         "cyclomatic-complexity": [
             true,
-            20
+            40
         ],
         "comment-format": [
             true,

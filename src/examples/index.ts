@@ -6,13 +6,13 @@ import kindOf from 'kind-of';
 export class Example {
 
     @Command()
-    defaultCommand(args: ICommandArguments) {
+    public defaultCommand(args: ICommandArguments) {
         args;
         return 'default';
     }
 
     @Command('test')
-    testCommand(args: ICommandArguments, app: ICommandLineApp) {
+    public testCommand(args: ICommandArguments, app: ICommandLineApp) {
         app.runCommand([]);
         app.runCommand(['main']);
         app.runCommand(['secondary']);
@@ -23,33 +23,33 @@ export class Example {
     }
 
     @Command('main')
-    mainCommand(args: ICommandArguments) {
+    public mainCommand(args: ICommandArguments) {
         return args.command.command;
     }
 
     @Command('secondary', 's')
-    secondaryCommand(args: ICommandArguments) {
+    public secondaryCommand(args: ICommandArguments) {
         return args.command.command;
     }
 
     @Command('options', 'o', [
         { name: 'one', alias: 'o', type: Command.Type.Boolean }
     ])
-    commandWithOptions(args: ICommandArguments) {
+    public commandWithOptions(args: ICommandArguments) {
         return args.options.has('o');
     }
 
     @Command('flags', 'f', [
         { name: 'one', flag: 'o' }
     ])
-    commandWithFlag(args: ICommandArguments) {
+    public commandWithFlag(args: ICommandArguments) {
         return args.flags.has('o');
     }
 
     @Command('complex', [
         { name: 'ref', alias: 'r', type: Command.Type.Function | Command.Type.Array | Command.Type.Object | Command.Type.String }
     ])
-    complexContentCommand(args: ICommandArguments, app: ICommandLineApp) {
+    public complexContentCommand(args: ICommandArguments, app: ICommandLineApp) {
         const value = args.options.get('ref');
         if (kindOf(value) === 'string') {
             if (value === 'test') {
