@@ -221,7 +221,7 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
                 throw 'validateCommandOption: invalid option.name';
             if (option.alias !== undefined && (!CommandNameRegex.test(option.alias) || option.alias === option.name))
                 throw 'validateCommandOption: invalid option.alias';
-            if (option.flag !== undefined && !(/^[a-zA-Z]{1}$/.test(option.flag)) || option.flag === option.name || option.alias === option.flag)
+            if (option.flag !== undefined && (!(/^[a-zA-Z]{1}$/.test(option.flag)) || option.flag === option.name || option.alias === option.flag))
                 throw 'validateCommandOption: invalid option.flag';
             if (option.flag && !option.type) option.type = Type.Boolean;
             if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String | Type.Integer | Type.Array | Type.Object | Type.Function | Type.Map | Type.Set | Type.Buffer))))
