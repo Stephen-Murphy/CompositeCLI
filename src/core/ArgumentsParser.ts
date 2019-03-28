@@ -1,7 +1,7 @@
 import { ICommandRegistry, RegisteredCommand, CommandNameRegex, RegisteredCommandOption, Type, ICommandArguments } from "./types";
 import { Arguments } from "./Arguments";
 import kindOf from "kind-of";
-import { Result, ResultHandler } from 'result-handler';
+import { Result, ResultHandler } from "result-handler";
 
 
 export default class ArgumentsParser {
@@ -14,11 +14,11 @@ export default class ArgumentsParser {
     private readonly options = new Map<string | number, any>();
     private readonly positionals: Array<any> = [];
     private readonly seen = new Set<RegisteredCommandOption>();
-    public static readonly FlagRegExp = /^-{1}(?=[^-])/; // '-' in '-f' but not '--f'
-    public static readonly OptionRegExp = /^-{2}(?=[^-])/; // '--' in '--o' but not '-o'
+    public static readonly FlagRegExp = /^-{1}(?=[^-])/; // "-" in "-f" but not "--f"
+    public static readonly OptionRegExp = /^-{2}(?=[^-])/; // "--" in "--o" but not "-o"
     public static readonly FlagValueRegExp = /[^a-zA-Z]/; // non alphabetical characters, case insensitive
     public static readonly StringQuotesRegExp = /^\"{1}|\"{1}$/; // surrounding double quotes in a string
-    public static readonly NoNextArg: unique symbol = Symbol('no next arg');
+    public static readonly NoNextArg: unique symbol = Symbol("no next arg");
     private readonly _handler: ResultHandler;
 
     constructor(registry: ICommandRegistry, args: Array<any>) {
@@ -53,10 +53,10 @@ export default class ArgumentsParser {
         const result = this._handler<RegisteredCommand>(this.parseCommand);
         const arg = this.args[0];
 
-        if (!arg || typeof arg !== 'string') {
+        if (!arg || typeof arg !== "string") {
             // resolve the global default/fallback else error
-            const command = this.registry.getCommand('');
-            if (!command) return result.throw('no command argument passed, and no global default @Command() specified');
+            const command = this.registry.getCommand("");
+            if (!command) return result.throw("no command argument passed, and no global default @Command() specified");
             this.command = command;
             return result.success(command);
         } else if (CommandNameRegex.test(arg)) {
@@ -66,8 +66,8 @@ export default class ArgumentsParser {
             this.command = command;
             return result.success(command);
         } else { // initial option is a flag or option for the default command
-            const command = this.registry.getCommand('');
-            if (!command) return result.throw('no command was passed, and no default handler specified');
+            const command = this.registry.getCommand("");
+            if (!command) return result.throw("no command was passed, and no default handler specified");
             return result.success(command);
         }
 
@@ -79,14 +79,14 @@ export default class ArgumentsParser {
 
         const result = this._handler(this.parseFlags);
 
-        for (let flagGroup of this.args.filter(a => typeof a === 'string' && ArgumentsParser.FlagRegExp.test(a))) {
+        for (let flagGroup of this.args.filter(a => typeof a === "string" && ArgumentsParser.FlagRegExp.test(a))) {
 
-            flagGroup = flagGroup.replace(ArgumentsParser.FlagRegExp, '');
+            flagGroup = flagGroup.replace(ArgumentsParser.FlagRegExp, "");
             if (ArgumentsParser.FlagValueRegExp.test(flagGroup))
                 return result.throw(`invalid characters in flags -${flagGroup}`);
             this.args.splice(this.args.indexOf(`-${flagGroup}`), 1);
 
-            for (const flag of flagGroup.split('')) {
+            for (const flag of flagGroup.split("")) {
                 const option = this.command!.options.find(o => o.flag === flag);
                 if (!option) return result.throw(`unknown flag -${flag} in group -${flagGroup}`);
                 if (this.seen.has(option)) return result.throw(`option ${option.name || option.alias || option.flag} already declared`);
@@ -113,7 +113,7 @@ export default class ArgumentsParser {
 
         const arg = this.args[0];
 
-        if (typeof arg === 'string') {
+        if (typeof arg === "string") {
             if (ArgumentsParser.OptionRegExp.test(arg))
                 return this.parseOption();
             if (ArgumentsParser.FlagRegExp.test(arg))
@@ -129,11 +129,11 @@ export default class ArgumentsParser {
         const result = this._handler(this.parseOption);
 
         const arg = this.validateOptionArg(this.args.shift());
-        const next = (typeof this.args[0] === 'string' && this.args[0].startsWith('-')) ? ArgumentsParser.NoNextArg : this.args[0];
+        const next = (typeof this.args[0] === "string" && this.args[0].startsWith("-")) ? ArgumentsParser.NoNextArg : this.args[0];
 
         const option = this.command!.options.find(o => o.name === arg || o.alias === arg);
-        if (!option) return result.throw(`unknown option '--${arg}'`);
-        if (this.seen.has(option)) return result.throw(`option '--${arg}' is already declared`);
+        if (!option) return result.throw(`unknown option "--${arg}"`);
+        if (this.seen.has(option)) return result.throw(`option "--${arg}" is already declared`);
         this.seen.add(option);
 
         if (option.positional) return result.throw(`[internal] option --${arg} cannot be configured as positional`);
@@ -151,18 +151,18 @@ export default class ArgumentsParser {
         // if next value starts with "-" treat as boolean
         if (next === ArgumentsParser.NoNextArg) {
             if (option.type & Type.Boolean) val = true;
-            else val = null;
+            else val = false;
         } else {
             val = this.parseValue(next, option.type).value;
             this.args.shift();
         }
 
-        if (typeof val !== 'boolean' && option.flag)
+        if (typeof val !== "boolean" && option.flag)
             return result.throw(`[internal] non-boolean option --${arg} cannot have a flag`);
 
         this.options.set(option.name, val);
         if (option.alias) this.options.set(option.alias, val);
-        if (option.flag && val === true && option.type & Type.Boolean)
+        if (option.flag && val === true)
             this.flags.add(option.flag);
 
         return result.success();
@@ -178,8 +178,8 @@ export default class ArgumentsParser {
         if (!option) return result.throw(`no positional option available for arg ${arg}`);
         this.seen.add(option);
 
-        if (!option.name && !option.alias) return result.throw('[internal] positional must have name and/or alias');
-        if (option.flag) return result.throw('[internal] positional cannot specify a flag');
+        if (!option.name && !option.alias) return result.throw("[internal] positional must have name and/or alias");
+        if (option.flag) return result.throw("[internal] positional cannot specify a flag");
 
         // positional type could be String | Number
         if (option.type & ~(Type.Number | Type.String))
@@ -191,11 +191,11 @@ export default class ArgumentsParser {
         this.positionals.push(val);
 
         if (option.name) {
-            if (this.options.has(option.name)) return result.throw(`positional option '${option.name}' already specified`);
+            if (this.options.has(option.name)) return result.throw(`positional option "${option.name}" already specified`);
             this.options.set(option.name, val);
         }
         if (option.alias) {
-            if (this.options.has(option.alias)) return result.throw(`positional option '${option.alias}' already specified`);
+            if (this.options.has(option.alias)) return result.throw(`positional option "${option.alias}" already specified`);
             this.options.set(option.alias, val);
         }
 
@@ -216,18 +216,18 @@ export default class ArgumentsParser {
             if (!Number.isNaN(Number(value))) return result.success(Number(value));
         }
         if (type & Type.Boolean && value !== "") {
-            if (typeof value === 'boolean') return result.success(value);
-            if (typeof value === 'string' || typeof value === 'number') {
+            if (typeof value === "boolean") return result.success(value);
+            if (typeof value === "string" || typeof value === "number") {
                 switch (value.toString().toLowerCase()) { // should only be on type YesOrNo
-                    case 'true': case '1': case 'yes': case 'y': return result.success(true);
-                    case 'false': case '0': case 'no': case 'n': return result.success(false);
+                    case "true": case "1": case "yes": case "y": return result.success(true);
+                    case "false": case "0": case "no": case "n": return result.success(false);
                     default: break; // TODO: should this fall through or error?
                 }
             }
         }
         if (type & Type.String) {
-            if (typeof value === 'string') {
-                if (value.startsWith('"') && value.endsWith('"')) {
+            if (typeof value === "string") {
+                if (value.startsWith("\"") && value.endsWith("\"")) {
                     return result.success(value.substring(1, value.length - 1));
                 } else {
                     return result.success(value);
@@ -235,33 +235,34 @@ export default class ArgumentsParser {
             }
         }
         if (type & Type.Map) {
-            if (kindOf(value) === 'map') return result.success(value);
+            if (kindOf(value) === "map") return result.success(value);
         }
         if (type & Type.Set) {
-            if (kindOf(value) === 'set') return result.success(value);
+            if (kindOf(value) === "set") return result.success(value);
         }
         if (type & Type.Buffer) {
-            if (kindOf(value) === 'buffer') return result.success(value);
+            if (kindOf(value) === "buffer") return result.success(value);
         }
         if (type & Type.Array) {
             if (Array.isArray(value)) return result.success(value);
-            if (typeof value === 'string') return result.success(value.split(',')); // TODO: proper split - this is very primitive and won't handle escaping or quote boundaries
+            if (typeof value === "string") return result.success(value.split(",")); // TODO: proper split - this is very primitive and won't handle escaping or quote boundaries
         }
         if (type & Type.Object) {
-            if (typeof value === 'object') return result.success(value);
+            if (typeof value === "object") return result.success(value);
         }
         if (type & Type.Function) {
-            if (typeof value === 'function') return result.success(value);
+            if (typeof value === "function") return result.success(value);
         }
 
-        return result.throw(`parseValue error with value or type mismatch got '${kindOf(value)}' but expected typemask ${type}`);
+        return result.throw(`parseValue error with value or type mismatch got "${kindOf(value)}" but expected typemask ${type}`);
 
     }
 
     private validateOptionArg(arg?: string): string {
-        if (!arg || !arg.startsWith('--') || !CommandNameRegex.test(arg.replace('--', '')))
+        // TODO: update to allow arg=x, --arg=x, --arg x (updates required elsewhere as well)
+        if (!arg || !arg.startsWith("--") || !CommandNameRegex.test(arg.replace("--", "")))
             throw this._handler(this.validateOptionArg).failure(`invalid option "${arg}"`).message;
-        return arg.replace('--', '');
+        return arg;
     }
 
 }
