@@ -128,7 +128,9 @@ export default class ArgumentsParser {
 
         const result = this._handler(this.parseOption);
 
+        // get next arg name (i.e. "--force" => "force")
         const arg = this.validateOptionArg(this.args.shift());
+        // check what next arg is - if it looks like a -flag or --option, next is NoNextArg, arg is boolean auto true
         const next = (typeof this.args[0] === "string" && this.args[0].startsWith("-")) ? ArgumentsParser.NoNextArg : this.args[0];
 
         const option = this.command!.options.find(o => o.name === arg || o.alias === arg);
@@ -262,7 +264,7 @@ export default class ArgumentsParser {
         // TODO: update to allow arg=x, --arg=x, --arg x (updates required elsewhere as well)
         if (!arg || !arg.startsWith("--") || !CommandNameRegex.test(arg.replace("--", "")))
             throw this._handler(this.validateOptionArg).failure(`invalid option "${arg}"`).message;
-        return arg;
+        return arg.replace(/^--/, "");
     }
 
 }
