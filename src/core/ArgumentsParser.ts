@@ -131,7 +131,7 @@ export default class ArgumentsParser {
         // get next arg name (i.e. "--force" => "force")
         const arg = this.validateOptionArg(this.args.shift());
         // check what next arg is - if it looks like a -flag or --option, next is NoNextArg, arg is boolean auto true
-        const next = (typeof this.args[0] === "string" && this.args[0].startsWith("-")) ? ArgumentsParser.NoNextArg : this.args[0];
+        const next = (!this.args.length || (typeof this.args[0] === "string" && this.args[0].startsWith("-"))) ? ArgumentsParser.NoNextArg : this.args[0];
 
         const option = this.command!.options.find(o => o.name === arg || o.alias === arg);
         if (!option) return result.throw(`unknown option "--${arg}"`);

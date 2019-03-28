@@ -1,6 +1,6 @@
 {
     "name": "composite-cli",
-    "version": "0.2.1-rc2",
+    "version": "0.2.1-rc3",
     "description": "CompositeCLI",
     "main": "dist/index.js",
     "scripts": {
