@@ -1,5 +1,5 @@
 import { CommandHandler, Command, ICommandArguments, ICommandLineApp } from '../';
-import kindOf from 'kind-of';
+// import kindOf from 'kind-of';
 
 
 @CommandHandler()
@@ -46,7 +46,7 @@ export class Example {
         return args.flags.has('o');
     }
 
-    @Command('complex', [
+    /* @Command('complex', [
         { name: 'ref', alias: 'r', type: Command.Type.Function | Command.Type.Array | Command.Type.Object | Command.Type.String }
     ])
     public complexContentCommand(args: ICommandArguments, app: ICommandLineApp) {
@@ -66,6 +66,6 @@ export class Example {
             return value;
         }
         return value;
-    }
+    } */
 
 }

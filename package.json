@@ -29,7 +29,7 @@
     "homepage": "https://github.com/Stephen-Murphy/CompositeCLI#readme",
     "dependencies": {
         "chalk": "^2.4.1",
-        "kind-of": "^6.0.2",
+        "kind-of": "github:Stephen-Murphy/kind-of",
         "result-handler": "0.0.5"
     },
     "devDependencies": {

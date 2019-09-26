@@ -1,5 +1,5 @@
 import CommandLineApp from '../../src/core/CommandLineApp';
-import { Example } from '../../src/examples/index';
+// import { Example } from '../../src/examples/index';
 
 const app = new CommandLineApp();
 
@@ -19,12 +19,12 @@ describe("E2E", () => {
         expect(await app.runCommand(['flags', '-o'])).toBe(true);
         const arr: any[] = [];
         const obj: any = { test: 123 };
-        const fn: any = Example.prototype.complexContentCommand;
+        // const fn: any = Example.prototype.complexContentCommand;
         const str: any = 'test';
         // complex commands passes through and runs each type until object is found
         expect(await app.runCommand(['complex', '--ref', arr])).toEqual(obj);
         expect(await app.runCommand(['complex', '--ref', obj])).toEqual(obj);
-        expect(await app.runCommand(['complex', '--ref', fn])).toEqual(obj);
+        // expect(await app.runCommand(['complex', '--ref', fn])).toEqual(obj);
         expect(await app.runCommand(['complex', '--ref', str])).toEqual(obj);
 
     });
