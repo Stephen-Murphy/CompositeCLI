@@ -151,7 +151,7 @@ function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandO
     } else if (Array.isArray(nameOrOptions)) {
 
         if (aliasOrOptions !== undefined || commandOptions !== undefined) throw `@Command() - invalid arguments for command method '${propertyKey}' (4)`;
-        commandOptions = nameOrOptions;
+        options = nameOrOptions;
 
     } else if (nameOrOptions === undefined) {
 
