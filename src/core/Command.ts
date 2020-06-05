@@ -1,10 +1,6 @@
 import { Default, DecoratorResult, TCommandOption, CommandNameRegex, Type, TCommandDecorator, RegisteredCommandOption } from "./types";
 import CommandRegistry from "./CommandRegistry";
-
-import kindOf from 'kind-of';
-
-const a: Array<[string, string]> = [];
-kindOf(a[Symbol.iterator]());
+import { err } from "./Util";
 
 // @CommandHandler()
 // - required on any class that handles a command
@@ -13,19 +9,19 @@ kindOf(a[Symbol.iterator]());
 // - required on any method in a class that handles a command
 
 // for a single main() command:
-// @CommandHandler('name', 'alias') on class
+// @CommandHandler("name", "alias") on class
 // @Command([...opts]) on method
 
 // for generic commands in one class:
 // @CommandHandler()
-// @Command('cmd', ...rest); // method 1
-// @Command('other', ...rest); // method 2
+// @Command("cmd", ...rest); // method 1
+// @Command("other", ...rest); // method 2
 
 // for sub commands
-// @CommandHandler('main')
+// @CommandHandler("main")
 // @Command() // default command for main
-// @Command('sub') // main-sub
-// @Command('other') // main-other
+// @Command("sub") // main-sub
+// @Command("other") // main-other
 
 // default command
 function CommandDecorator(): DecoratorResult;
@@ -73,26 +69,27 @@ function CommandHandlerDecorator(name?: string | typeof Default, alias?: string)
     return function decorate(handlerClass: Function): Function {
 
         // validate configuration and register command handler
+        const e = err(`@CommandHandler() ${handlerClass.name} { }`);
 
         // validate command name as undefined, Default, or pascal-case
         if (name === undefined) {
             name = Default;
         } else if (typeof name === 'string') {
             if (!CommandNameRegex.test(name))
-                throw `@CommandHandler() ${handlerClass.name} { } - command name is not a valid command name`;
+                throw e("command name is not a valid command name");
         } else if (name !== Default) {
-            throw `@CommandHandler() ${handlerClass.name} { } - command name is invalid`;
+            throw e("command name is invalid");
         }
 
         // validate alias
         // can't be same as command-name, can't have a duplicate with any other command-name or command-alias
         if (typeof alias === 'string') {
             if (!CommandNameRegex.test(alias))
-                throw `@CommandHandler() ${handlerClass.name} { } - command alias is not a valid command name`;
+                throw e("command alias is not a valid command name");
             if (alias === name)
-                throw `@CommandHandler() ${handlerClass.name} { } - command alias cannot be the same as command name`;
+                throw e("command alias cannot be the same as command name");
         } else if (alias !== undefined) {
-            throw `@CommandHandler() ${handlerClass.name} { } - command alias is invalid`;
+            throw e("command alias is invalid");
         }
 
         CommandRegistry.registerHandler(name, alias || null, handlerClass);
@@ -110,21 +107,22 @@ export const CommandHandler = CommandHandlerDecorator;
 
 function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandOption[], aliasOrOptions?: string | TCommandOption[], commandOptions?: TCommandOption[]) {
 
+    const e = err("@Command()");
     let name: string | typeof Default = Default;
     let alias: string | null = null;
     let options: TCommandOption[] = [];
 
-    if (typeof nameOrOptions === 'string') {
+    if (typeof nameOrOptions === "string") {
 
         if (!CommandNameRegex.test(nameOrOptions))
-            throw `@Command() - invalid command name for method '${propertyKey}'`;
+            throw e(`invalid command name for method "${propertyKey}"`);
 
         name = nameOrOptions;
 
-        if (typeof aliasOrOptions === 'string') {
+        if (typeof aliasOrOptions === "string") {
 
             if (!CommandNameRegex.test(aliasOrOptions))
-                throw `@Command() - invalid command alias for method '${propertyKey}'`;
+                throw e(`invalid command alias for method "${propertyKey}"`);
 
             alias = aliasOrOptions;
 
@@ -134,38 +132,48 @@ function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandO
 
             } else if (commandOptions !== undefined) {
 
-                throw `@Command() - invalid arguments for command method '${propertyKey}' (1)`;
+                throw e(`invalid arguments for command method "${propertyKey}" (1)`);
 
             }
 
         } else if (Array.isArray(aliasOrOptions)) {
 
-            if (commandOptions !== undefined) throw `@Command() - invalid arguments for command method '${propertyKey}' (2)`;
+            if (commandOptions !== undefined) throw e(`invalid arguments for command method "${propertyKey}" (2)`);
             alias = null;
             options = aliasOrOptions;
 
         } else if (aliasOrOptions !== undefined) {
-            throw `@Command() - invalid arguments for command method '${propertyKey}' (3)`;
+            throw e(`invalid arguments for command method "${propertyKey}" (3)`);
         }
 
     } else if (Array.isArray(nameOrOptions)) {
 
-        if (aliasOrOptions !== undefined || commandOptions !== undefined) throw `@Command() - invalid arguments for command method '${propertyKey}' (4)`;
+        if (aliasOrOptions !== undefined || commandOptions !== undefined) throw e(`invalid arguments for command method "${propertyKey}" (4)`);
         options = nameOrOptions;
 
     } else if (nameOrOptions === undefined) {
 
         if (aliasOrOptions !== undefined || commandOptions !== undefined)
-            throw `@Command() - invalid arguments for command method '${propertyKey}' (5)`;
+            throw e(`invalid arguments for command method "${propertyKey}" (5)`);
 
     } else {
 
-        throw `@Command() - invalid arguments for command method '${propertyKey}' (6)`;
+        throw e(`invalid arguments for command method "${propertyKey}" (6)`);
 
     }
 
+    const validated = [];
+    for (let i = 0; i < options.length; i++) {
+        const option = validateCommandOption(options[i]);
+        if ((option.type & Type.Args) && (i !== options.length - 1))
+            throw e("only last option can specify 'Args' type");
+        validated.push(option);
+    }
+
     return {
-        name: name as typeof Default | string, alias, options: options.map(validateCommandOption)
+        name: name as typeof Default | string,
+        alias,
+        options: validated
     };
 
 }
@@ -183,10 +191,10 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
     // { name?: string, positional: true, type: Number | String }
     // { name: string, alias?: string, flag?: string, type: Boolean | Number | String }
 
-    if (typeof option === 'string') {
+    if (typeof option === "string") {
 
         if (!CommandNameRegex.test(option))
-            throw 'validateCommandOption: invalid option name string';
+            throw new Error("validateCommandOption: invalid option name string");
 
         name = option; // --name
         alias = null;
@@ -194,20 +202,16 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
         positional = false;
         type = Type.Boolean;
 
-    } else if (option && typeof option === 'object') {
+    } else if (option && typeof option === "object") {
 
         if (option.positional) {
 
-            // can only have type string | number
             if (!option.type)
-                throw 'Positional option must specify a type';
-            // removed - positional can be anything
-            // if (![Type.Number, Type.Integer, Type.String, Type.Number | Type.String, Type.Integer | Type.String, Type.Integer | Type.Number, Type.Integer | Type.String | Type.Number].includes(option.type))
-            //    throw 'Positional option must specify string or number type';
+                throw new Error("Positional option must specify a type");
             if (option.flag)
-                throw 'Positional option cannot specify flag';
+                throw new Error("Positional option cannot specify flag");
             if (option.name && !(CommandNameRegex.test(option.name)))
-                throw `Invalid internal name '${option.name}' on positional option`;
+                throw new Error(`Invalid internal name "${option.name}" on positional option`);
 
             name = option.name || null;
             alias = option.alias || null;
@@ -218,14 +222,14 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
         } else {
 
             if (!option.name || !CommandNameRegex.test(option.name))
-                throw 'validateCommandOption: invalid option.name';
+                throw new Error("validateCommandOption: invalid option.name");
             if (option.alias !== undefined && (!CommandNameRegex.test(option.alias) || option.alias === option.name))
-                throw 'validateCommandOption: invalid option.alias';
+                throw new Error("validateCommandOption: invalid option.alias");
             if (option.flag !== undefined && (!(/^[a-zA-Z]{1}$/.test(option.flag)) || option.flag === option.name || option.alias === option.flag))
-                throw 'validateCommandOption: invalid option.flag';
+                throw new Error("validateCommandOption: invalid option.flag");
             if (option.flag && !option.type) option.type = Type.Boolean;
             if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String | Type.Integer | Type.Array | Type.Object | Type.Function | Type.Map | Type.Set | Type.Buffer))))
-                throw 'validateCommandOption: invalid option.type';
+                throw new Error("validateCommandOption: invalid option.type");
 
             name = option.name;
             alias = option.alias || null;
@@ -236,8 +240,11 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
         }
 
     } else {
-        throw 'validateCommandOption: invalid option';
+        throw new Error("validateCommandOption: invalid option");
     }
+
+    if ((type & Type.Args) && (type !== Type.Args))
+        throw new Error("validateCommandOption: invalid option type - 'Args' type cannot be mixed");
 
     return { name, alias, flag, positional, type };
 

@@ -1,7 +1,6 @@
+import { readdir } from "fs";
+import { resolve } from "path";
 import { RegisteredCommandHandler, Default, RegisteredCommandOption, RegisteredCommand, ICommandRegistry, ICommandLineApp } from "./types";
-import { readdir } from 'fs';
-import { resolve } from 'path';
-
 
 const importedCommands = new Set<string>();
 
@@ -29,7 +28,7 @@ class CommandRegistry implements ICommandRegistry {
     public registerHandler(name: string | typeof Default, alias: string | null, handlerClass: Function) {
 
         if (this.handlers.find(h => h.handlerClass === handlerClass))
-            throw `CommandRegistry.registerHandler() - handler ${handlerClass.name} is already registered`;
+            throw new Error(`CommandRegistry.registerHandler() - handler ${handlerClass.name} is already registered`);
 
         const handler: RegisteredCommandHandler = {
             command: name,
@@ -39,14 +38,14 @@ class CommandRegistry implements ICommandRegistry {
         };
 
         if (!this.pendingCommands.size)
-            throw `@CommandHandler ${name.toString()} has no registered @Commands`;
+            throw new Error(`@CommandHandler ${name.toString()} has no registered @Commands`);
 
         this.pendingCommands.forEach(command => {
 
             if (command.target.constructor !== handlerClass)
-                throw `No CommandHandler registered for Command ${name.toString()}`;
+                throw new Error(`No CommandHandler registered for Command ${name.toString()}`);
             if (handler.methods.find(m => m.command === command.command))
-                throw `CommandRegistry: error reconciling commands - duplicate command '${command.command.toString()}' in handler '${handler.command.toString()}'`;
+                throw new Error(`CommandRegistry: error reconciling commands - duplicate command '${command.command.toString()}' in handler '${handler.command.toString()}'`);
 
             handler.methods.push(command);
             this.commands.push(command);
@@ -62,7 +61,7 @@ class CommandRegistry implements ICommandRegistry {
 
             if (handler.command === Default) {
                 if (method.command === Default) {
-                    command = '';
+                    command = "";
                     alias = null;
                 } else {
                     command = method.command;
@@ -80,12 +79,12 @@ class CommandRegistry implements ICommandRegistry {
             }
 
             if (this.reconciledCommands.has(command))
-                throw `CommandRegistry: duplicate command "${command || Default.toString()}"`;
+                throw new Error(`CommandRegistry: duplicate command "${command || Default.toString()}"`);
             this.reconciledCommands.set(command, method);
 
             if (alias) {
                 if (this.reconciledCommands.has(alias))
-                    throw `CommandRegistry: alias "${alias}" already exists or is the same as a command`;
+                    throw new Error(`CommandRegistry: alias "${alias}" already exists or is the same as a command`);
                 this.reconciledCommands.set(alias, method);
             }
 
@@ -118,7 +117,7 @@ class CommandRegistry implements ICommandRegistry {
 
         return new Promise(res => {
 
-            if (!commandsDir) throw 'CommandLineApp.importCommands() - no commandsDir';
+            if (!commandsDir) throw new Error("CommandLineApp.importCommands() - no commandsDir");
 
             this.reset(true);
             // if we allow user to import commands manually they won't be invalidated and there could be multiple references to the same class instance but in different file instances
@@ -130,7 +129,7 @@ class CommandRegistry implements ICommandRegistry {
                 if (err) throw err;
 
                 for (const fileName of fileNames) {
-                    if (fileName.endsWith('.js')) {
+                    if (fileName.endsWith(".js")) {
 
                         const msg = `Importing command ${fileName}...`;
                         app.logLine(msg);
@@ -151,7 +150,7 @@ class CommandRegistry implements ICommandRegistry {
                     }
                 }
 
-                app.logLine('');
+                app.logLine("");
 
                 res();
 

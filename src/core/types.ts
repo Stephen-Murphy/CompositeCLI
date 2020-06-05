@@ -1,5 +1,5 @@
 
-export const Default: unique symbol = Symbol('[DefaultCommand]');
+export const Default: unique symbol = Symbol("[DefaultCommand]");
 
 export type RegisteredCommandHandler = {
     readonly handlerClass: Function; // class constructor
@@ -43,10 +43,12 @@ export const Type = Object.freeze({
     Integer: <8>8,
     Array: <16>16,
     Object: <32>32,
-    Function: <64>64,
-    Map: <128>128,
-    Set: <256>256,
-    Buffer: <512>512
+    Function: <64>64, // when used internally
+    Map: <128>128, // when used internally
+    Set: <256>256, // when used internally
+    Buffer: <512>512, // when used internally
+    Args: <1024>1024,
+    Null: <2048>2048
 });
 
 export interface ICommandMetadata {

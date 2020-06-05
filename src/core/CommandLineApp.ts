@@ -14,7 +14,7 @@ export default class CommandLineApp implements ICommandLineApp {
         if (typeof commandsDir === "string") {
             Object.defineProperty(this, "commandsDir", { writable: false, value: resolve(commandsDir) });
         } else if (commandsDir !== null && commandsDir !== undefined) {
-            throw `CommandLineApp() - invalid commandsDir parameter <string | null>?`;
+            throw new Error("CommandLineApp() - invalid commandsDir parameter <string | null>?");
         }
     }
 
