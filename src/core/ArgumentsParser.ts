@@ -1,5 +1,5 @@
 import kindOf from "kind-of";
-import { ICommandRegistry, RegisteredCommand, CommandNameRegex, RegisteredCommandOption, Type, ICommandArguments } from "./types";
+import { ICommandRegistry, RegisteredCommand, CommandNameRegex, RegisteredCommandOption, Type, ICommandArguments, Fallback } from "./types";
 import { Arguments } from "./Arguments";
 
 export default class ArgumentsParser {
@@ -57,15 +57,26 @@ export default class ArgumentsParser {
             return command;
         } else if (CommandNameRegex.test(arg)) {
             const command = this.registry.getCommand(arg);
-            if (!command) throw new Error(`no command resolved for ${arg}`);
-            this.args.shift();
-            this.command = command;
-            return command;
+            if (command) {
+                this.args.shift();
+                this.command = command;
+                return command;
+            }
+            const fallback = this.registry.getCommand(Fallback);
+            if (!fallback) throw new Error(`no command resolved for ${arg}`);
+            // don't shift args as we need the first one
+            this.command = fallback;
+            return fallback;
         } else { // initial option is a flag or option for the default command
             const command = this.registry.getCommand("");
-            if (!command) throw new Error("no command was passed, and no default handler specified");
-            this.command = command;
-            return command;
+            if (command) {
+                this.command = command;
+                return command;
+            }
+            const fallback = this.registry.getCommand(Fallback);
+            if (!fallback) throw new Error("no command was passed, and no default handler specified");
+            this.command = fallback;
+            return fallback;
         }
 
     }
@@ -76,8 +87,8 @@ export default class ArgumentsParser {
 
         for (const arg of this.args) {
 
-            if (typeof arg !== "string" || !ArgumentsParser.FlagRegExp.test(arg)) continue;
             if (arg === ArgumentsParser.ArgSeparator) break;
+            if (typeof arg !== "string" || !ArgumentsParser.FlagRegExp.test(arg)) continue;
 
             const flagGroup = arg.replace(ArgumentsParser.FlagRegExp, "");
             if (ArgumentsParser.FlagValueRegExp.test(flagGroup))
@@ -190,7 +201,7 @@ export default class ArgumentsParser {
         if (option.type & ~(Type.Number | Type.String))
             throw new Error(`[internal] invalid option type for positional argument`);
 
-        const val = this.parseValue(arg, option.type).value;
+        const val = this.parseValue(arg, option.type);
 
         this.options.set(this.positionals.length, val);
         this.positionals.push(val);

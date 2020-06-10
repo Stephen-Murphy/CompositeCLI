@@ -1,5 +1,6 @@
 
 export const Default: unique symbol = Symbol("[DefaultCommand]");
+export const Fallback: unique symbol = Symbol("[FallbackHandler]");
 
 export type RegisteredCommandHandler = {
     readonly handlerClass: Function; // class constructor
@@ -11,7 +12,7 @@ export type RegisteredCommandHandler = {
 export type RegisteredCommand = {
     readonly target: object; // host class of method
     readonly method: string; // target[method]
-    readonly command: string | typeof Default;
+    readonly command: string | typeof Default | typeof Fallback;
     readonly alias: string | null; // null if command is Default
     readonly options: RegisteredCommandOption[];
     readonly descriptor: PropertyDescriptor;
@@ -25,10 +26,10 @@ export interface ICommandLineApp {
 export interface ICommandRegistry {
     readonly handlers: Array<RegisteredCommandHandler>;
     readonly commands: Array<RegisteredCommand>;
-    readonly reconciledCommands: Map<string, RegisteredCommand>;
+    readonly reconciledCommands: Map<string | typeof Fallback, RegisteredCommand>;
     registerHandler(name: string | typeof Default, alias: string | null, handlerClass: Function): void;
-    registerCommand(command: string | typeof Default, alias: string | null, options: RegisteredCommandOption[], target: object, method: string, descriptor: PropertyDescriptor): void;
-    getCommand(command: string): RegisteredCommand | null;
+    registerCommand(command: string | typeof Default | typeof Fallback, alias: string | null, options: RegisteredCommandOption[], target: object, method: string, descriptor: PropertyDescriptor): void;
+    getCommand(command: string | typeof Fallback): RegisteredCommand | null;
     reset(hard: boolean): void;
 }
 
@@ -77,11 +78,11 @@ export type DecoratorResult = (target: object, propertyKey: string, descriptor: 
 
 export type TCommandDecorator = {
     (): DecoratorResult;
-    (name: string): DecoratorResult;
-    (name: string, alias: string): DecoratorResult;
+    (name: string | typeof Fallback): DecoratorResult;
+    (name: string | typeof Fallback, alias: string): DecoratorResult;
     (options: TCommandOption[]): DecoratorResult;
-    (name: string, options: TCommandOption[]): DecoratorResult;
-    (name: string, alias: string, options: TCommandOption[]): DecoratorResult;
+    (name: string | typeof Fallback, options: TCommandOption[]): DecoratorResult;
+    (name: string | typeof Fallback, alias: string, options: TCommandOption[]): DecoratorResult;
     Type: typeof Type;
 };
 
@@ -89,6 +90,6 @@ export interface ICommandArguments {
     readonly command: RegisteredCommand;
     readonly argv: ReadonlyArray<string>;
     readonly flags: Set<string>;
-    readonly options: Map<string | number, string | number | boolean | null>;
-    readonly positionals: Array<string | number | boolean | null>;
+    readonly options: Map<string | number, any>;
+    readonly positionals: Array<any>;
 }

@@ -1,4 +1,4 @@
-import { Default, DecoratorResult, TCommandOption, CommandNameRegex, Type, TCommandDecorator, RegisteredCommandOption } from "./types";
+import { Default, DecoratorResult, TCommandOption, CommandNameRegex, Type, TCommandDecorator, RegisteredCommandOption, Fallback } from "./types";
 import CommandRegistry from "./CommandRegistry";
 import { err } from "./Util";
 
@@ -26,16 +26,16 @@ import { err } from "./Util";
 // default command
 function CommandDecorator(): DecoratorResult;
 // named command or sub-command
-function CommandDecorator(name: string): DecoratorResult;
+function CommandDecorator(name: string | typeof Fallback): DecoratorResult;
 // named command or sub-command with alias
-function CommandDecorator(name: string, alias: string): DecoratorResult;
+function CommandDecorator(name: string | typeof Fallback, alias: string): DecoratorResult;
 // default command or sub-command with options
 function CommandDecorator(options: TCommandOption[]): DecoratorResult;
 // named command or sub-command with options
-function CommandDecorator(name: string, options: TCommandOption[]): DecoratorResult;
+function CommandDecorator(name: string | typeof Fallback, options: TCommandOption[]): DecoratorResult;
 // named command or sub-command with alias and options
-function CommandDecorator(name: string, alias: string, options: TCommandOption[]): DecoratorResult;
-function CommandDecorator(nameOrOptions?: string | TCommandOption[], aliasOrOptions?: string | TCommandOption[], commandOptions?: TCommandOption[]): DecoratorResult {
+function CommandDecorator(name: string | typeof Fallback, alias: string, options: TCommandOption[]): DecoratorResult;
+function CommandDecorator(nameOrOptions?: string | typeof Fallback | TCommandOption[], aliasOrOptions?: string | TCommandOption[], commandOptions?: TCommandOption[]): DecoratorResult {
 
     function decorate(target: object, propertyKey: string, descriptor: PropertyDescriptor): void {
 
@@ -105,23 +105,23 @@ export const Command = <TCommandDecorator>CommandDecorator;
 // Class decorator
 export const CommandHandler = CommandHandlerDecorator;
 
-function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandOption[], aliasOrOptions?: string | TCommandOption[], commandOptions?: TCommandOption[]) {
+function validateCommand(propertyKey: string, nameOrOptions?: string | typeof Fallback | TCommandOption[], aliasOrOptions?: string | TCommandOption[], commandOptions?: TCommandOption[]) {
 
     const e = err("@Command()");
-    let name: string | typeof Default = Default;
+    let name: string | typeof Fallback | typeof Default = Default;
     let alias: string | null = null;
     let options: TCommandOption[] = [];
 
-    if (typeof nameOrOptions === "string") {
+    if (typeof nameOrOptions === "string" || nameOrOptions === Fallback) {
 
-        if (!CommandNameRegex.test(nameOrOptions))
+        if (typeof nameOrOptions === "string" && !CommandNameRegex.test(nameOrOptions))
             throw e(`invalid command name for method "${propertyKey}"`);
 
         name = nameOrOptions;
 
         if (typeof aliasOrOptions === "string") {
 
-            if (!CommandNameRegex.test(aliasOrOptions))
+            if (typeof aliasOrOptions === "string" && !CommandNameRegex.test(aliasOrOptions))
                 throw e(`invalid command alias for method "${propertyKey}"`);
 
             alias = aliasOrOptions;
@@ -171,8 +171,8 @@ function validateCommand(propertyKey: string, nameOrOptions?: string | TCommandO
     }
 
     return {
-        name: name as typeof Default | string,
-        alias,
+        name: name as typeof Default | typeof Fallback | string,
+        alias: alias as string | null,
         options: validated
     };
 
@@ -228,7 +228,7 @@ function validateCommandOption(option: TCommandOption): RegisteredCommandOption 
             if (option.flag !== undefined && (!(/^[a-zA-Z]{1}$/.test(option.flag)) || option.flag === option.name || option.alias === option.flag))
                 throw new Error("validateCommandOption: invalid option.flag");
             if (option.flag && !option.type) option.type = Type.Boolean;
-            if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String | Type.Integer | Type.Array | Type.Object | Type.Function | Type.Map | Type.Set | Type.Buffer))))
+            if (!option.type || (option.type & (~(Type.Boolean | Type.Number | Type.String | Type.Integer | Type.Array | Type.Object | Type.Function | Type.Map | Type.Set | Type.Buffer | Type.Args))))
                 throw new Error("validateCommandOption: invalid option.type");
 
             name = option.name;

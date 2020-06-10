@@ -1,6 +1,6 @@
 import { readdir } from "fs";
 import { resolve } from "path";
-import { RegisteredCommandHandler, Default, RegisteredCommandOption, RegisteredCommand, ICommandRegistry, ICommandLineApp } from "./types";
+import { RegisteredCommandHandler, Default, RegisteredCommandOption, RegisteredCommand, ICommandRegistry, ICommandLineApp, Fallback } from "./types";
 
 const importedCommands = new Set<string>();
 
@@ -8,7 +8,7 @@ class CommandRegistry implements ICommandRegistry {
 
     public readonly handlers: Array<RegisteredCommandHandler> = [];
     public readonly commands: Array<RegisteredCommand> = [];
-    public readonly reconciledCommands: Map<string, RegisteredCommand> = new Map();
+    public readonly reconciledCommands: Map<string | typeof Fallback, RegisteredCommand> = new Map();
     private readonly pendingCommands = new Set<RegisteredCommand>();
 
     public constructor() { }
@@ -56,7 +56,7 @@ class CommandRegistry implements ICommandRegistry {
 
         for (const method of handler.methods) {
 
-            let command: string;
+            let command: string | typeof Fallback;
             let alias: string | null;
 
             if (handler.command === Default) {
@@ -71,15 +71,17 @@ class CommandRegistry implements ICommandRegistry {
                 if (method.command === Default) {
                     command = handler.command;
                     alias = handler.alias;
-                } else {
+                } else if (typeof method.command === "string") {
                     command = `${handler.command}-${method.command}`;
                     //                                          alias without dash(?) i.e. cc instead of create-component
                     alias = handler.alias ? method.alias ? `${handler.alias}${method.alias}` : handler.alias : null;
+                } else {
+                    throw new Error("Fallback command can only appear on a blank/default handler");
                 }
             }
 
             if (this.reconciledCommands.has(command))
-                throw new Error(`CommandRegistry: duplicate command "${command || Default.toString()}"`);
+                throw new Error(`CommandRegistry: duplicate command "${command.toString() || Default.toString()}"`);
             this.reconciledCommands.set(command, method);
 
             if (alias) {
@@ -94,18 +96,16 @@ class CommandRegistry implements ICommandRegistry {
 
     }
 
-    public registerCommand(command: string | typeof Default, alias: string | null, options: RegisteredCommandOption[], target: object, method: string, descriptor: PropertyDescriptor) {
+    public registerCommand(command: string | typeof Default | typeof Fallback, alias: string | null, options: RegisteredCommandOption[], target: object, method: string, descriptor: PropertyDescriptor) {
 
-        const cmd: RegisteredCommand = {
+        this.pendingCommands.add({
             command,
             alias,
             method,
             options,
             target,
             descriptor
-        };
-
-        this.pendingCommands.add(cmd);
+        });
 
     }
 
