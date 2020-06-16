@@ -85,15 +85,18 @@ export default class ArgumentsParser {
 
         // all items starting with a single dash are flags and are grouped together as one for handling
 
-        for (const arg of this.args) {
+        for (let i = 0; i < this.args.length; i++) {
 
+            const arg = this.args[i];
             if (arg === ArgumentsParser.ArgSeparator) break;
             if (typeof arg !== "string" || !ArgumentsParser.FlagRegExp.test(arg)) continue;
 
             const flagGroup = arg.replace(ArgumentsParser.FlagRegExp, "");
             if (ArgumentsParser.FlagValueRegExp.test(flagGroup))
                 throw new Error(`invalid characters in flags -${flagGroup}`);
-            this.args.splice(this.args.indexOf(`-${flagGroup}`), 1);
+
+            this.args.splice(i, 1);
+            i--;
 
             for (const flag of flagGroup.split("")) {
                 const option = this.command!.options.find(o => o.flag === flag);
@@ -172,7 +175,7 @@ export default class ArgumentsParser {
             if (option.type & Type.Boolean) val = true;
             else val = false;
         } else {
-            val = this.parseValue(next, option.type).value;
+            val = this.parseValue(next, option.type);
             this.args.shift();
         }
 
